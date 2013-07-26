@@ -60,6 +60,7 @@ type Yielder interface {
 	// returns any values sent to the next call to Resume().
 	// This is the equivalent of `coroutine.yield()` in Lua.
 	Yield(int)
+	// TODO : Replace by a Yielder function created as required, with MakeFunc
 }
 
 // The Caller interface is to be used anywhere where a coro needs to be
@@ -88,7 +89,7 @@ func newCoroutine(fn interface{}) (*coroutine, error) {
 		return nil, ErrNotFunc
 	}
 	a0 := t.In(0)
-	if a0.Kind() != reflect.Interface || a0.Name() != "Yielder" {
+	if a0.Kind() != reflect.Interface || a0.Name() != "Yielder" { // TODO : Check also package name
 		return nil, ErrArg0NotYielder
 	}
 	// Use as little initial memory as possible, zero value other fields
