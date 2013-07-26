@@ -1,4 +1,4 @@
-// Package gocoro implements the same API and features as the Lua coroutines in pure
+// Package gocoro implements similar API and features as the Lua coroutines in pure
 // go.
 //
 // See http://www.lua.org/pil/9.html for details on the Lua coroutines.
@@ -42,6 +42,18 @@ func (s Status) String() string {
 	return statusNms[s]
 }
 
+// New(func(Tin) Tout, yldPtr interface{}, rsmPtr interface{}) Caller =>
+//   - Creates a Yield function with signature `func(Tout) Tin`
+//   - Creates an in channel `chan Tin`
+//   - Creates an out channel `chan Tout`
+//   - Creates a Resume function with signature `func(Tin) (Tout, error)`
+//   - Returns a Caller interface that implements `Cancel() error` and `Status() Status`
+
+// TODO : The reflection-based "generic" implementation must work like this:
+// - The coroutine function can have any parameters, but the first must
+//   be a func with the Yield signature (will receive the yield function)
+// -
+//
 // The coroutine struct is private, the outside world only see the contextually
 // relevant portions of it, via the Yielder or Caller interfaces.
 type coroutine struct {
@@ -53,22 +65,9 @@ type coroutine struct {
 	err     error         // The last error
 }
 
-// The Yielder interface is to be used only from inside a coroutine's
-// function.
-type Yielder interface {
-	// Yield sends the specified values to the caller of the coro, and
-	// returns any values sent to the next call to Resume().
-	// This is the equivalent of `coroutine.yield()` in Lua.
-	Yield(int)
-	// TODO : Replace by a Yielder function created as required, with MakeFunc
-}
-
 // The Caller interface is to be used anywhere where a coro needs to be
 // called.
 type Caller interface {
-	// Resume (re)starts the coroutine and returns the values yielded by this run,
-	// or an error. This is the equivalent of `coroutine.resume()` in Lua.
-	Resume() (int, error)
 	// Status returns the current status of the coro. This is the equivalent of
 	// `coroutine.status()` in Lua.
 	Status() Status
@@ -77,6 +76,15 @@ type Caller interface {
 	// is not to be used again, unlike in Lua where coroutines are eventually garbage-collected.
 	// http://stackoverflow.com/questions/3642808/abandoning-coroutines
 	Cancel() error
+}
+
+func (c *coroutine) makeYield(yfnPtr interface{}) {
+	// The actual Yield function implementation works on
+	// `reflect.Value`s and is a closure over the coroutine
+	// reference `c`.
+	y := func(in []reflect.Value) []reflect.Value {
+
+	}
 }
 
 // Internal constructor for a coroutine, used to create all coroutine structs.
@@ -221,7 +229,7 @@ func (c *coroutine) Cancel() error {
 }
 
 // Yields execution to the caller, sending values along the way.
-func (c *coroutine) Yield(i int) {
+func (c *coroutine) yield(i int) {
 	// Yield is called from within the func. It sets the status to Suspended,
 	// unless the coro is dying (Yield from a call to Cancel).
 	isDead := c.status == StDead
