@@ -126,6 +126,8 @@ func (c *coroutine) iter(ch chan int) {
 // Executes the coroutine function and catches any error, and returns the final
 // return value.
 func (c *coroutine) run() {
+	// set status as running, now that the coro goroutine is running.
+	c.status = StRunning
 	// Start the goroutine that runs the actual coro function.
 	go func() {
 		var i int
@@ -146,8 +148,6 @@ func (c *coroutine) run() {
 		// Trap the return value, and in the defer, yield it like any normally Yielded value.
 		i = c.fn(c)
 	}()
-	// ... and set status as running, now that the coro goroutine is running.
-	c.status = StRunning
 }
 
 // Returns the current status of the coro.
@@ -210,12 +210,13 @@ func (c *coroutine) Cancel() error {
 func (c *coroutine) Yield(i int) {
 	// Yield is called from within the func. It sets the status to Suspended,
 	// unless the coro is dying (Yield from a call to Cancel).
-	if c.status != StDead {
+	isDead := c.status == StDead
+	if !isDead {
 		c.status = StSuspended
 	}
 	// Send the value
 	c.yld <- i
-	if c.status != StDead {
+	if !isDead {
 		// Wait for resume
 		if _, ok := <-c.rsm; !ok {
 			// c.rsm is closed, cancel by panicking, will be caught in c.run's defer statement.
