@@ -109,9 +109,9 @@ func TestPanicInFn(t *testing.T) {
 
 func TestIter(t *testing.T) {
 	c := createIter()
-	cnt := 0
-	for _ = range c {
-		cnt++
+	sum := 0
+	for i := range c {
+		sum += i
 	}
-	assert.Equal(t, 11, cnt)
+	assert.Equal(t, 1055, sum)
 }
