@@ -8,8 +8,8 @@ import (
 
 var panicAt = 0
 
-func corofn(y Yielder) int {
-	for i := 1; i <= 10; i++ {
+func corofn(y Yielder, start, cnt, step int) int {
+	for i := start; i <= cnt; i += step {
 		if i == panicAt {
 			panic("gulp")
 		}
@@ -21,12 +21,20 @@ func corofn(y Yielder) int {
 
 func createCoro() Caller {
 	panicAt = 0
-	return New(corofn)
+	c, err := New(corofn)
+	if err != nil {
+		panic(err)
+	}
+	return c
 }
 
 func createIter() <-chan int {
 	panicAt = 0
-	return NewIter(corofn)
+	c, err := NewIter(corofn)
+	if err != nil {
+		panic(err)
+	}
+	return c
 }
 
 func TestInitialStatus(t *testing.T) {

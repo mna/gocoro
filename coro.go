@@ -6,13 +6,16 @@ package gocoro
 
 import (
 	"fmt"
+	"reflect"
 )
 
 var (
 	// Common errors returned by the coroutine
-	ErrEndOfCoro    = fmt.Errorf("coroutine terminated")
-	ErrInvalidState = fmt.Errorf("coroutine is in invalid state")
-	ErrCancel       = fmt.Errorf("coroutine canceled")
+	ErrEndOfCoro      = fmt.Errorf("coroutine terminated")
+	ErrInvalidState   = fmt.Errorf("coroutine is in invalid state")
+	ErrCancel         = fmt.Errorf("coroutine canceled")
+	ErrNotFunc        = fmt.Errorf("fn is not a function type")
+	ErrArg0NotYielder = fmt.Errorf("argument 0 is not a Yielder")
 )
 
 // The status of the coroutine is an "enum"
@@ -39,15 +42,10 @@ func (s Status) String() string {
 	return statusNms[s]
 }
 
-// The generic signature of a coro-ready function, in Lua this is built into
-// the language via the global coroutine variable, here the Yielder is passed
-// as a parameter.
-type Fn func(Yielder) int
-
 // The coroutine struct is private, the outside world only see the contextually
 // relevant portions of it, via the Yielder or Caller interfaces.
 type coroutine struct {
-	fn      Fn            // The function to run as a coro
+	fn      reflect.Value // The function to run as a coro, must be a func with a Yielder as first param
 	rsm     chan struct{} // The resume synchronisation channel
 	yld     chan int      // The yield synchronisation channel
 	status  Status        // The current status of the coro
@@ -81,28 +79,42 @@ type Caller interface {
 }
 
 // Internal constructor for a coroutine, used to create all coroutine structs.
-func newCoroutine(fn Fn) *coroutine {
+func newCoroutine(fn interface{}) (*coroutine, error) {
+	t := reflect.TypeOf(fn)
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	if t.Kind() != reflect.Func {
+		return nil, ErrNotFunc
+	}
+	a0 := t.In(0)
+	if a0.Kind() != reflect.Interface || a0.Name() != "Yielder" {
+		return nil, ErrArg0NotYielder
+	}
 	// Use as little initial memory as possible, zero value other fields
 	return &coroutine{
-		fn: fn,
-	}
+		fn: reflect.ValueOf(fn),
+	}, nil
 }
 
 // Public constructor of a coroutine Caller. The matching Yielder will automatically
 // be given to the function once the coro is started. This is equivalent to
 // `coroutine.create()` in Lua.
-func New(fn Fn) Caller {
+func New(fn interface{}) (Caller, error) {
 	return newCoroutine(fn)
 }
 
 // Public constructor of an Iterator coroutine.
 // Cannot be canceled, should be drained or goroutine will leak
 // This is equivalent to `coroutine.wrap()` in Lua.
-func NewIter(fn Fn) <-chan int {
-	c := newCoroutine(fn)
+func NewIter(fn interface{}) (<-chan int, error) {
+	c, err := newCoroutine(fn)
+	if err != nil {
+		return nil, err
+	}
 	ch := make(chan int)
 	go c.iter(ch)
-	return ch
+	return ch, nil
 }
 
 // Implements the iterator behaviour by looping over all values returned by the coro
@@ -146,7 +158,8 @@ func (c *coroutine) run() {
 		}()
 
 		// Trap the return value, and in the defer, yield it like any normally Yielded value.
-		i = c.fn(c)
+		out := c.fn.Call([]reflect.Value{reflect.ValueOf(c)})
+		i = int(out[0].Int())
 	}()
 }
 
