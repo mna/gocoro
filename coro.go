@@ -5,14 +5,15 @@
 package gocoro
 
 import (
+	"errors"
 	"fmt"
 )
 
 var (
 	// Common errors returned by the coroutine
-	ErrEndOfCoro    = fmt.Errorf("coroutine terminated")
-	ErrInvalidState = fmt.Errorf("coroutine is in invalid state")
-	ErrCancel       = fmt.Errorf("coroutine canceled")
+	ErrEndOfCoro    = errors.New("coroutine terminated")
+	ErrInvalidState = errors.New("coroutine is in invalid state")
+	ErrCancel       = errors.New("coroutine canceled")
 )
 
 // The status of the coroutine is an "enum"
