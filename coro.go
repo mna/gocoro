@@ -5,17 +5,18 @@
 package gocoro
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 )
 
 var (
 	// Common errors returned by the coroutine
-	ErrEndOfCoro      = fmt.Errorf("coroutine terminated")
-	ErrInvalidState   = fmt.Errorf("coroutine is in invalid state")
-	ErrCancel         = fmt.Errorf("coroutine canceled")
-	ErrNotFunc        = fmt.Errorf("fn is not a function type")
-	ErrArg0NotYielder = fmt.Errorf("argument 0 is not a Yielder")
+	ErrEndOfCoro      = errors.New("coroutine terminated")
+	ErrInvalidState   = errors.New("coroutine is in invalid state")
+	ErrCancel         = errors.New("coroutine canceled")
+	ErrNotFunc        = errors.New("fn is not a function type")
+	ErrArg0NotYielder = errors.New("argument 0 is not a Yielder")
 )
 
 // The status of the coroutine is an "enum"
