@@ -2,6 +2,7 @@
 // go.
 //
 // See http://www.lua.org/pil/9.html for details on the Lua coroutines.
+// See http://0value.com/implementing-lua-coroutines-in-Go for details on this package.
 package gocoro
 
 import (
