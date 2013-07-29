@@ -8,7 +8,7 @@ import (
 
 var panicAt = 0
 
-func corofn(y Yielder) int {
+func corofn(y Yielder, args ...interface{}) interface{} {
 	for i := 1; i <= 10; i++ {
 		if i == panicAt {
 			panic("gulp")
@@ -24,7 +24,7 @@ func createCoro() Caller {
 	return New(corofn)
 }
 
-func createIter() <-chan int {
+func createIter() <-chan interface{} {
 	panicAt = 0
 	return NewIter(corofn)
 }
@@ -39,7 +39,7 @@ func TestYieldOne(t *testing.T) {
 	i, err := c.Resume()
 	assert.T(t, err == nil)
 	assert.Equal(t, StSuspended, c.Status())
-	assert.Equal(t, 1, i)
+	assert.Equal(t, 1, i.(int))
 }
 
 func TestYieldMany(t *testing.T) {
@@ -50,7 +50,7 @@ func TestYieldMany(t *testing.T) {
 
 	assert.T(t, err == nil)
 	assert.Equal(t, StSuspended, c.Status())
-	assert.Equal(t, 3, i)
+	assert.Equal(t, 3, i.(int))
 }
 
 func TestCancelBeforeStart(t *testing.T) {
@@ -111,7 +111,7 @@ func TestIter(t *testing.T) {
 	c := createIter()
 	sum := 0
 	for i := range c {
-		sum += i
+		sum += i.(int)
 	}
 	assert.Equal(t, 1055, sum)
 }
