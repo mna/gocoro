@@ -39,7 +39,7 @@ func TestYieldOne(t *testing.T) {
 	i, err := c.Resume()
 	assert.T(t, err == nil)
 	assert.Equal(t, StSuspended, c.Status())
-	assert.Equal(t, 1, i.(int))
+	assert.Equal(t, 1, i)
 }
 
 func TestYieldMany(t *testing.T) {
@@ -50,7 +50,7 @@ func TestYieldMany(t *testing.T) {
 
 	assert.T(t, err == nil)
 	assert.Equal(t, StSuspended, c.Status())
-	assert.Equal(t, 3, i.(int))
+	assert.Equal(t, 3, i)
 }
 
 func TestCancelBeforeStart(t *testing.T) {
