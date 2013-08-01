@@ -129,3 +129,16 @@ func TestResumeInCoro(t *testing.T) {
 	err, _ := c.Resume(c)
 	assert.Equal(t, ErrInvalidState, err)
 }
+
+/*
+ * By using in parallel, it is possible to create a race on the status field.
+ * Running go test -race triggers a race with this test.
+func TestMisuseCaller(t *testing.T) {
+	c := createCoro()
+	go func() {
+		// Create a race on the status
+		c.Status()
+	}()
+	c.Resume()
+}
+*/
