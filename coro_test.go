@@ -34,6 +34,11 @@ func TestInitialStatus(t *testing.T) {
 	assert.Equal(t, StSuspended, c.Status())
 }
 
+func TestInitialStatusName(t *testing.T) {
+	c := createCoro()
+	assert.Equal(t, "Suspended", c.Status().String())
+}
+
 func TestYieldOne(t *testing.T) {
 	c := createCoro()
 	i, err := c.Resume()
@@ -114,4 +119,13 @@ func TestIter(t *testing.T) {
 		sum += i.(int)
 	}
 	assert.Equal(t, 1055, sum)
+}
+
+func TestResumeInCoro(t *testing.T) {
+	c := New(func(y Yielder, args ...interface{}) interface{} {
+		_, err := args[0].(Caller).Resume()
+		return err
+	})
+	err, _ := c.Resume(c)
+	assert.Equal(t, ErrInvalidState, err)
 }
